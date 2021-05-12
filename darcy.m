@@ -3,7 +3,7 @@ clear; close all; clc;
 %% SET MODEL PARAMETERS
 
 % set domain parameters
-N     = 400;      % num. grid size
+N     = 200;      % num. grid size
 D     = 1e3;      % phys. domain depth [m]
 h     = D./N;     % grid spacing [m] 
 
@@ -19,12 +19,12 @@ kT    = 1e-6;     % thermal diffusivity [m2/s]
 aT    = 1e-4;     % thermal expansivity [1/K]
 
 % set initial condition parameters
-T0    = 100;      % background temperature [C]
+C0    = 1;        % background concentration [C]
 smth  = (N/50)^2; % smoothness of random noise
 
 % set model timing parameters
 tend  = 1e11;     % model stopping time [s]
-nop   = 20;       % print output every 'nop' steps
+nop   = 10;       % print output every 'nop' steps
 
 % set numerical solver parameters
 CFL   = 0.75;     % Courant number to limit time step size
@@ -54,7 +54,7 @@ rn = rn./max(abs(rn(:)));
 
 % set initial condition
 f = f0 + f0/2.*(1-Z/D) + f0/100.*rn;  % porosity    (linear decrease + random perturbation)
-T =  0 + T0  .*   Z/D  + T0/100.*rn;  % temperature (linear increase + random perturbation) 
+C =  0 + C0  .*   Z/D  + C0/100.*rn;  % concentration (linear increase + random perturbation) 
 
 % plot initial condition
 figure(1);
@@ -62,8 +62,8 @@ subplot(2,1,1)
 imagesc(x,z,f); axis equal tight; colorbar;
 title('Initial Porosity [vol]')
 subplot(2,1,2)
-imagesc(x,z,T); axis equal tight; colorbar;
-title('Initial Temperature [C]')
+imagesc(x,z,C); axis equal tight; colorbar;
+title('Initial Concentration [C]')
 drawnow
 
 % prepare solution & residual arrays for VP solver
@@ -90,7 +90,7 @@ while time <= tend
     dtau = (h/2)^2./K;
         
     % update density difference
-    Drho = rhol0.*aT.*(T-mean(T,2));
+    Drho = rhol0.*aT.*(C-mean(C,2));
     
     % UPDATE VELOCITY-PRESSURE SOLUTION (PSEUDO-TRANSIENT SOLVER)
     Fnorm = 1e6;
@@ -131,32 +131,32 @@ while time <= tend
     end
     fprintf(1,'---  %d,  %e\n\n',it,Fnorm);
         
-    % UPDATE TEMPERATURE SOLUTION (EXPLICIT SOLVER)
+    % UPDATE CONCENTRATION SOLUTION (EXPLICIT SOLVER)
     dt = CFL .* min([(h/2)/max(abs(w(:))) , (h/2)/max(abs(u(:))) , (h/2)^2./kT]);  % diffusive timestep
 
-    % calculate heat diffusion
-    T(2:end-1,2:end-1) = T(2:end-1,2:end-1) + kT .* (diff(T(:,2:end-1),2,1)./h^2 ...
-                                                   + diff(T(2:end-1,:),2,2)./h^2) .* dt;
+    % calculate concentration diffusion
+    C(2:end-1,2:end-1) = C(2:end-1,2:end-1) + kT.* (diff(C(:,2:end-1),2,1)./h^2 ...
+                                                   + diff(C(2:end-1,:),2,2)./h^2) .* dt;
     
-    % calculate heat advection
+    % calculate concentration advection
     wp = max(0, (w(1:end-1,2:end-1)+w(2:end,2:end-1))./2);
     wm = min(0, (w(1:end-1,2:end-1)+w(2:end,2:end-1))./2);
     up = max(0, (u(2:end-1,1:end-1)+u(2:end-1,2:end))./2);
     um = min(0, (u(2:end-1,1:end-1)+u(2:end-1,2:end))./2);
     
-    grdTzp = diff(T(2:end  ,2:end-1),1,1)./h;
-    grdTzm = diff(T(1:end-1,2:end-1),1,1)./h;
-    grdTxp = diff(T(2:end-1,2:end  ),1,2)./h;
-    grdTxm = diff(T(2:end-1,1:end-1),1,2)./h;
+    grdCzp = diff(C(2:end  ,2:end-1),1,1)./h;
+    grdCzm = diff(C(1:end-1,2:end-1),1,1)./h;
+    grdCxp = diff(C(2:end-1,2:end  ),1,2)./h;
+    grdCxm = diff(C(2:end-1,1:end-1),1,2)./h;
     
-    T(2:end-1,2:end-1) = T(2:end-1,2:end-1) - (wp.*grdTzm + wm.*grdTzp ...
-                                            +  up.*grdTxm + um.*grdTxp) .* dt;
+    C(2:end-1,2:end-1) = C(2:end-1,2:end-1) - (wp.*grdCzm + wm.*grdCzp ...
+                                            +  up.*grdCxm + um.*grdCxp) .* dt;
 
-    % apply temperature boundary conditions
-    T(:,1  ) = T(:,2    );  % left boundary: insulating
-    T(:,end) = T(:,end-1);  % right boundary: unsulating
-    T(1  ,:) = 0;           % top boundary: isothermal
-    T(end,:) = T0;          % bottom boundary: isothermal
+    % apply concentration boundary conditions
+    C(:,1  ) = C(:,2    );  % left boundary: insulating
+    C(:,end) = C(:,end-1);  % right boundary: unsulating
+    C(1  ,:) = 0;           % top boundary: isothermal
+    C(end,:) = C0;          % bottom boundary: isothermal
     
     % plot solution
     if ~mod(m,nop)
@@ -172,10 +172,12 @@ while time <= tend
         imagesc(x,z,p); axis equal tight; colorbar;
         title('Dynamic fluid pressure [Pa]')
         subplot(2,2,4);
-        imagesc(x,z,T); axis equal tight; colorbar;
-        title('Temperature [C]')
-        drawnow   
-        saveas(figure(2),sprintf('%d_darcy.jpg',m/10))
+        imagesc(x,z,C); axis equal tight; colorbar;
+        title('Concentration [C]')
+        drawnow  
+            
+        print(num2str(m),'-dpng')
+        
         
       
     end
