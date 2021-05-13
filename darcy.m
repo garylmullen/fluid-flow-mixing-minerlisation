@@ -104,7 +104,6 @@ while time <= tend
     dtau = (h/2)^2./K;
         
     % update density difference
-    %Drho      = rhol0.*aT.*(T-mean(T,2));%Original density equation
     Drho = rhol0.*(- aT.*(T-mean(T,2))) + gC.*(C-mean(C,2));
     
     
@@ -126,7 +125,7 @@ while time <= tend
         u = -(K(:,1:end-1)+K(:,2:end))./2 .* (gradPx + 0                                       );
         
         % calculate residual of pressure equation
-        F(2:end-1,2:end-1) = diff(w(:,2:end-1),1,1)./h + diff(u(2:end-1,:),1,2)./h;
+        .F(2:end-1,2:end-1) = diff(w(:,2:end-1),1,1)./h + diff(u(2:end-1,:),1,2)./h;
 
         % update pressure solution
         p = pi - alpha.*F.*dtau + beta.*(pi-pii);
