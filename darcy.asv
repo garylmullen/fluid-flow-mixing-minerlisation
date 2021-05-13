@@ -104,8 +104,8 @@ while time <= tend
     dtau = (h/2)^2./K;
         
     % update density difference
-    %Drho      = rhol0.*aT.*(T-mean(T,2));%Original density equation
-    Drho = rhol0.*(- aT.*(T-mean(T,2))) + gC.*(C-mean(C,2));
+    Drho      = rhol0.*aT.*(T-mean(T,2));%Original density equation
+    Drho = rhol0.*(- aT + gamma*C);
     
     
     % UPDATE VELOCITY-PRESSURE SOLUTION (PSEUDO-TRANSIENT SOLVER)
