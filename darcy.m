@@ -2,8 +2,10 @@ clear; close all; clc;
 
 %% SET MODEL PARAMETERS
 
+runID = 'test';
+
 % set domain parameters
-N     = 200;      % num. grid size
+N     = 100;      % num. grid size
 D     = 1e3;      % phys. domain depth [m]
 h     = D./N;     % grid spacing [m] 
 
@@ -43,6 +45,10 @@ tol   = 1e-8;     % residual tolerance for iterative solver
 alpha = 0.99;     % step size for iterative solver
 beta  = 0.95;     % damping parameter for iterative solver
 
+% create output directory
+if ~isfolder(['./out/',runID])
+    mkdir(['./out/',runID]);
+end
 
 %% INITIAL MODEL SETUP
 
@@ -68,7 +74,7 @@ f = f0 + (f1-f0) .* Z/D + df.*rn;  % porosity    (linear decrease + random pertu
 T = T0 + (T1-T0) .* Z/D + dT.*rn;  % temperature (linear increase + random perturbation)
 C = C0 + (C1-C0) .* Z/D + dC.*rn;  % composition (linear increase + random perturbation)
 
-figure(1);
+fh1 = figure(1);
 subplot(3,1,1)
 imagesc(x,z,f); axis equal tight; colorbar;
 title('Initial Porosity [vol]')
@@ -104,7 +110,7 @@ while time <= tend
     dtau = (h/2)^2./K;
         
     % update density difference
-    Drho = rhol0.*(- aT.*(T-mean(T,2))) + gC.*(C-mean(C,2));
+    Drho = - rhol0.*(- aT.*(T-mean(T,2))) + gC.*(C-mean(C,2));
     
     
     % UPDATE VELOCITY-PRESSURE SOLUTION (PSEUDO-TRANSIENT SOLVER)
@@ -170,8 +176,8 @@ while time <= tend
     % apply temperature boundary conditions
     T(:,1  ) = T(:,2    );  % left boundary: insulating
     T(:,end) = T(:,end-1);  % right boundary: unsulating
-    T(1  ,:) = 0;           % top boundary: isothermal
-    T(end,:) = T0;          % bottom boundary: isothermal
+    T(1  ,:) = T0;          % top boundary: isothermal
+    T(end,:) = T1;          % bottom boundary: isothermal
     
     
     % UPDATE CONCENTRATION SOLUTION (EXPLICIT SOLVER)
@@ -198,13 +204,13 @@ while time <= tend
     % apply concentration boundary conditions
     C(:,1  ) = C(:,2    );  % left boundary: closed
     C(:,end) = C(:,end-1);  % right boundary: closed
-    C(1  ,:) = C0;          % top boundary: isoconcentrate
-    C(end,:) = 0;           % bottom boundary: isoconcentrate
+    C(1  ,:) = C0;          % top boundary: isochemical
+    C(end,:) = C1;          % bottom boundary: isochemical
     
     
     % plot solution
     if ~mod(m,nop)
-        figure(2);
+        fh2 = figure(2);
         sgtitle(sprintf('Time elapsed %.1f years', time/31557600))
         subplot(2,3,1);
         imagesc(x,z,-w.*3600*24*365.25); axis equal tight; colorbar;
@@ -220,16 +226,14 @@ while time <= tend
         title('Temperature [C]')
         subplot(2,3,5);
         imagesc(x,z,C); axis equal tight; colorbar;
-        title('Concentration [mol?]')
+        title('Concentration [wt]')
         subplot(2,3,6);
         imagesc(x,z,f); axis equal tight; colorbar;
-        title('Porosity')
+        title('Porosity [vol]')
         drawnow  
             
-        print(num2str(m),'-dpng')
+        print(fh2,['./out/',runID,'/',runID,'_',int2str(m/nop)],'-dpng','-r200')
         
-        
-      
     end
     
     % update time and step count
