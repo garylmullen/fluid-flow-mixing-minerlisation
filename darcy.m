@@ -175,10 +175,10 @@ while time <= tend
     
     
     % UPDATE CONCENTRATION SOLUTION (EXPLICIT SOLVER)
-    dt = CFL .* min([(h/2)/max(abs(w(:))) , (h/2)/max(abs(u(:))) , (h/2)^2./kT]);  % diffusive timestep
+    dt = CFL .* min([(h/2)/max(abs(w(:))) , (h/2)/max(abs(u(:))) , (h/2)^2./kC]);  % diffusive timestep
 
     % calculate concentration diffusion
-    C(2:end-1,2:end-1) = C(2:end-1,2:end-1) + kT.* (diff(C(:,2:end-1),2,1)./h^2 ...
+    C(2:end-1,2:end-1) = C(2:end-1,2:end-1) + kC.* (diff(C(:,2:end-1),2,1)./h^2 ...
                                                    + diff(C(2:end-1,:),2,2)./h^2) .* dt;
     
     % calculate concentration advection
