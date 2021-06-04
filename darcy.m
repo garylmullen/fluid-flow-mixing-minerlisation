@@ -2,7 +2,7 @@ clear; close all; clc;
 
 %% SET MODEL PARAMETERS
 
-runID = 'test';
+runID = 'test_gC1.0_ConstT_SalintyDiff_1_oom';
 
 % set domain parameters
 N     = 100;      % num. grid size
@@ -20,7 +20,7 @@ grav  = 9.81;     % gravity [m/s2]
 kC    = 1e-7;      % chemical diffusivity [m2/s]  
 kT    = 1e-6;     % thermal diffusivity [m2/s]
 aT    = 1e-4;     % thermal expansivity [1/K]
-gC    = 0.1;       % chemical density contrast [1/wt]
+gC    = 1.0;       % chemical density contrast [1/wt]
 
 % set initial condition parameters
 f0    = 0.05;     % background porosity [vol]
@@ -29,7 +29,7 @@ df    = 0.001;    % perturbation amplitude [vol]
 T0    = 10;       % top temperature [C]
 T1    = 100;      % base temperature [C]
 dT    = 0.1;      % perturbation amplitude [C]
-C0    = 0.04;     % top concentration  [C]
+C0    = 0.1;      % top concentration  [C]
 C1    = 0.01;     % base concentration [C]
 dC    = 0.001;    % perturbation amplitude [C]
 smth  = (N/50)^2; % smoothness of random noise
@@ -110,7 +110,7 @@ while time <= tend
     dtau = (h/2)^2./K;
         
     % update density difference
-    Drho = - rhol0.*(- aT.*(T-mean(T,2))) + gC.*(C-mean(C,2));
+    Drho = - rhol0.*(- aT.*(T-mean(T,2)) + gC.*(C-mean(C,2)));
     
     
     % UPDATE VELOCITY-PRESSURE SOLUTION (PSEUDO-TRANSIENT SOLVER)
