@@ -137,7 +137,7 @@ while time <= tend
         p = pi - alpha.*F.*dtau + beta.*(pi-pii);
         
         % apply pressure boundary conditions
-        p(:,1  ) = p(:,2    );
+          p(:,1  ) = p(:,2    );
         p(:,end) = p(:,end-1);
         p(1  ,:) = p(2    ,:) + (Drho(1  ,:)+Drho(2    ,:))./2.*grav.*h;
         p(end,:) = p(end-1,:) - (Drho(end,:)+Drho(end-1,:))./2.*grav.*h;
